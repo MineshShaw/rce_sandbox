@@ -1,10 +1,7 @@
-FROM gcc:13-slim
+FROM node:20-slim
 
 RUN apt-get update && apt-get install -y tini && rm -rf /var/lib/apt/lists/*
 RUN useradd -m -s /bin/bash sandboxuser
 WORKDIR /workspace
-
-# Ensure the sandbox user owns the workspace to write compiled binaries into the tmpfs mount
-RUN chown -R sandboxuser:sandboxuser /workspace
 
 ENTRYPOINT ["/usr/bin/tini", "--"]

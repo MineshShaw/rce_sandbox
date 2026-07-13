@@ -1,0 +1,5 @@
+{
+  "name": "@rce/shared-types",
+  "version": "1.0.0",
+  "main": "src/languages.ts"
+}

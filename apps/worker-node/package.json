@@ -1,0 +1,23 @@
+{
+  "name": "worker-node",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest",            
+    "test:run": "vitest run",    
+    "test:ui": "vitest --ui" 
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@types/dockerode": "^4.0.1",
+    "@types/node": "^26.1.1",
+    "vitest": "^4.1.10"
+  },
+  "dependencies": {
+    "dockerode": "^5.0.1"
+  }
+}
