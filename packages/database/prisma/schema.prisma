@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// --- ENUMS: The Strict State Machine ---
+
+enum Language {
+  PYTHON
+  JAVASCRIPT
+  CPP
+}
+
+enum SubmissionStatus {
+  PENDING               // Job is sitting in the Redis Queue
+  RUNNING               // A Worker Node has picked it up
+  COMPLETED             // Execution finished successfully (Passed all tests)
+  FAILED                // Execution finished, but test cases failed (Wrong Answer)
+  TIME_LIMIT_EXCEEDED   // Watchdog killed the container (TLE)
+  MEMORY_LIMIT_EXCEEDED // Docker OOM killed the container (MLE)
+  RUNTIME_ERROR         // Code crashed during execution (e.g., Division by Zero)
+  COMPILATION_ERROR     // Code failed to compile (C++/Rust)
+  SYSTEM_ERROR          // Infrastructure failure (Docker crash, S3 unreachable)
+}
+
+// --- MODELS ---
+
+model Problem {
+  id             String       @id @default(uuid())
+  title          String
+  description    String
+  
+  // Execution constraints mapped directly to our Docker Sandbox config
+  timeLimitMs    Int          @default(3000)
+  memoryLimitMb  Int          @default(256)
+  
+  // S3 pointers for test cases to prevent DB bloat
+  testCasesS3Key String       // e.g., "problems/123/testcases.json"
+  
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  submissions    Submission[]
+}
+
+model Submission {
+  id               String           @id @default(uuid())
+  problemId        String
+  userId           String           // Stub for standard User relations
+  
+  language         Language
+  status           SubmissionStatus @default(PENDING)
+  
+  // S3 pointers for the user's payload to keep the database fast
+  codeS3Key        String           // e.g., "submissions/456/code.txt"
+  
+  // Metrics collected post-execution by the Worker Node
+  executionTimeMs  Int?
+  memoryUsedMb     Float?
+  errorMessage     String?          @db.Text
+  
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  // Relations
+  problem          Problem          @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  // Indexes to speed up Queue polling and user dashboard queries
+  @@index([status])
+  @@index([userId])
+}
