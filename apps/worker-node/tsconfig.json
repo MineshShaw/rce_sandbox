@@ -1,5 +1,21 @@
 {
   "compilerOptions": {
-    "types": ["node", "vitest/globals"]
+    "types": ["node", "vitest/globals"],
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
+    "paths": {
+      "@rce/*": ["../../packages/*/src"]
+    }
+  },
+  "ts-node": {
+    "transpileOnly": true,
+    "require": ["tsconfig-paths/register"]
   }
 }

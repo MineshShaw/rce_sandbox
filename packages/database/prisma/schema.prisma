@@ -9,9 +9,9 @@ datasource db {
 // --- ENUMS: The Strict State Machine ---
 
 enum Language {
-  PYTHON
-  JAVASCRIPT
-  CPP
+  python
+  javascript
+  cpp
 }
 
 enum SubmissionStatus {

@@ -13,7 +13,7 @@ export const SUBMISSION_QUEUE_NAME = 'rce-submissions';
 export interface SubmissionJobPayload {
   submissionId: string;
   problemId: string;
-  language: 'PYTHON' | 'JAVASCRIPT' | 'CPP';
+  language: 'python' | 'javascript' | 'cpp';
   codeS3Key: string;
   testCasesS3Key: string;
   timeLimitMs: number;
