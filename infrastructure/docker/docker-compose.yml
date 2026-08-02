@@ -1,5 +1,7 @@
 version: '3.8'
 
+name: rce_sandbox
+
 services:
   # 1. The State Machine (PostgreSQL)
   postgres:

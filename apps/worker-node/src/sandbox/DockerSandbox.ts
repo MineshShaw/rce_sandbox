@@ -24,7 +24,7 @@ export class DockerSandbox {
   constructor(customConfig?: Partial<SandboxConfig>) {
     this.docker = new Docker(); 
     this.config = {
-      timeoutMs: 3000,
+      timeoutMs: 10000,
       memoryLimitBytes: 256 * 1024 * 1024, 
       cpuQuota: 0.5,
       pidsLimit: 64,
@@ -32,14 +32,16 @@ export class DockerSandbox {
     };
   }
 
-  public async execute(language: SupportedLanguage, sourceCode: string): Promise<SandboxResult> {
+  public async execute(language: SupportedLanguage, sourceCode: string, stdin?: string): Promise<SandboxResult> {
     let container: Docker.Container | null = null;
     let timeoutTimer: NodeJS.Timeout | null = null;
     let isTimeout = false;
+    
+    const hasStdin = Boolean(stdin && stdin.length > 0);
 
     try {
       const strategy = LanguageRegistry[language];
-      const tmpfsOptions = language === 'cpp' 
+      const tmpfsOptions = language === 'CPP' 
         ? 'rw,nosuid,size=64m,mode=777' 
         : 'rw,noexec,nosuid,size=64m,mode=777';
       
@@ -52,6 +54,9 @@ export class DockerSandbox {
         Env: [`CODE_PAYLOAD=${base64Code}`], // 2. Inject via environment variable
         AttachStdout: true,                  // 3. No Stdin required!
         AttachStderr: true,
+        AttachStdin: hasStdin,   
+        OpenStdin: hasStdin,     
+        StdinOnce: hasStdin,     
         Tty: false,
         User: 'sandboxuser',
         NetworkDisabled: true,
@@ -70,6 +75,7 @@ export class DockerSandbox {
         stream: true,
         stdout: true,
         stderr: true,
+        stdin: hasStdin,
       });
 
       const stdoutStream = new PassThrough();
@@ -84,6 +90,11 @@ export class DockerSandbox {
       container.modem.demuxStream(stream, stdoutStream, stderrStream);
 
       await container.start();
+
+      if (hasStdin && stdin) {
+        stream.write(stdin);
+        stream.end();
+      }
 
       const streamClosedPromise = new Promise<void>((resolve) => {
         stream.on('end', resolve);

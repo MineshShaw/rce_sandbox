@@ -6,7 +6,7 @@ describe('Phase 1: DockerSandbox Execution Engine', () => {
 
   it('should successfully execute safe python code', async () => {
     const code = `print("Hello from the isolated sandbox!")`;
-    const result = await sandbox.execute('python', code);
+    const result = await sandbox.execute('PYTHON', code);
     
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toBe('Hello from the isolated sandbox!');
@@ -25,7 +25,7 @@ while True:
         print("Fork bomb neutralized", flush=True)
         os._exit(0) # Force immediate exit of this specific process
     `;
-    const result = await sandbox.execute('python', forkBombCode);
+    const result = await sandbox.execute('PYTHON', forkBombCode);
     
     // The sandbox should either catch it instantly, or our Watchdog will TLE it. Both are safe!
     expect(result.stdout).toContain('Fork bomb neutralized');
@@ -39,7 +39,7 @@ try:
 except OSError as e:
     print(f"Blocked: {e}", flush=True)
     `;
-    const result = await sandbox.execute('python', hackCode);
+    const result = await sandbox.execute('PYTHON', hackCode);
     
     expect(result.exitCode).toBe(0);
     // Linux throws 'Permission denied' because sandboxuser is strictly non-root!
@@ -48,7 +48,7 @@ except OSError as e:
   
   it('should enforce strict execution timeouts (TLE)', async () => {
     const infiniteLoop = `while True: pass`;
-    const result = await sandbox.execute('python', infiniteLoop);
+    const result = await sandbox.execute('PYTHON', infiniteLoop);
     
     expect(result.exitCode).toBe(137); // SIGKILL
     expect(result.isTimeout).toBe(true);

@@ -12,7 +12,7 @@ app.use(express.json());
 
 // 1. Zod Schema for strict input validation
 const submissionSchema = z.object({
-  language: z.enum(['python', 'javascript', 'cpp']),
+  language: z.enum(['PYTHON', 'JAVASCRIPT', 'CPP']),
   code: z.string().min(1, "Code cannot be empty"),
   problemId: z.string().uuid("Invalid problem ID format").optional(), // Optional for sandbox mode
 });
@@ -107,6 +107,7 @@ app.get('/api/submissions/:id', async (req: Request, res: Response): Promise<any
       executionTimeMs: submission.executionTimeMs,
       memoryUsedMb: submission.memoryUsedMb,
       errorMessage: submission.errorMessage,
+      output: submission.stdout,
     });
 
   } catch (error) {

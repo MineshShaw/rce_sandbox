@@ -39,7 +39,7 @@ print("✅ Execution Complete!")
       id: submissionId,
       problemId: problemId,
       userId: 'user_live_test',
-      language: 'python',
+      language: 'PYTHON',
       status: 'PENDING',
       codeS3Key: codeKey,
     }
@@ -54,7 +54,7 @@ print("✅ Execution Complete!")
   const job = await submissionQueue.add('execute-code', {
     submissionId: submissionId,
     problemId: problemId,
-    language: 'python',
+    language: 'PYTHON',
     codeS3Key: codeKey,
     testCasesS3Key: 'mock/cases.json',
     timeLimitMs: 3000,

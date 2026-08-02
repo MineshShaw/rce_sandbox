@@ -1,10 +1,16 @@
-FROM gcc:13-slim
+FROM gcc:latest
 
-RUN apt-get update && apt-get install -y tini && rm -rf /var/lib/apt/lists/*
-RUN useradd -m -s /bin/bash sandboxuser
+# Create a secure, non-root user
+RUN useradd -m sandboxuser
+
+# Set up the working directory
 WORKDIR /workspace
 
-# Ensure the sandbox user owns the workspace to write compiled binaries into the tmpfs mount
-RUN chown -R sandboxuser:sandboxuser /workspace
+# THE FIX: Give ownership AND full read/write/execute permissions to the workspace
+RUN chown -R sandboxuser:sandboxuser /workspace && chmod -R 777 /workspace
 
-ENTRYPOINT ["/usr/bin/tini", "--"]
+# Drop root privileges
+USER sandboxuser
+
+# Keep the container alive so we can inject code into it
+CMD ["tail", "-f", "/dev/null"]

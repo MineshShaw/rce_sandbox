@@ -9,9 +9,9 @@ datasource db {
 // --- ENUMS: The Strict State Machine ---
 
 enum Language {
-  python
-  javascript
-  cpp
+  PYTHON
+  JAVASCRIPT
+  CPP
 }
 
 enum SubmissionStatus {
@@ -61,6 +61,7 @@ model Submission {
   executionTimeMs  Int?
   memoryUsedMb     Float?
   errorMessage     String?          @db.Text
+  stdout           String?
   
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt

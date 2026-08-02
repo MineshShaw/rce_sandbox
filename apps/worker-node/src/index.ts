@@ -55,6 +55,7 @@ const worker = new Worker<SubmissionJobPayload>(
           status: finalStatus,
           executionTimeMs,
           errorMessage: errorMessage || null,
+          stdout: result.stdout || null,
         }
       });
 

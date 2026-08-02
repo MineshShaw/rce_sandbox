@@ -1,4 +1,4 @@
-export type SupportedLanguage = 'python' | 'javascript' | 'cpp';
+export type SupportedLanguage = 'PYTHON' | 'JAVASCRIPT' | 'CPP';
 
 export interface LanguageStrategy {
   image: string;
@@ -7,21 +7,21 @@ export interface LanguageStrategy {
 }
 
 export const LanguageRegistry: Record<SupportedLanguage, LanguageStrategy> = {
-  python: {
+  PYTHON: {
     image: 'rce-python-runner',
     cmd: ['sh', '-c', 'echo "$CODE_PAYLOAD" | base64 -d > /workspace/solution.py && python3 /workspace/solution.py'],
     sourceFileName: 'solution.py'
   },
-  javascript: {
+  JAVASCRIPT: {
     image: 'rce-js-runner',
     cmd: ['sh', '-c', 'echo "$CODE_PAYLOAD" | base64 -d > /workspace/solution.js && node /workspace/solution.js'],
     sourceFileName: 'solution.js'
   },
-  cpp: {
+  CPP: {
     image: 'rce-cpp-runner',
     cmd: [
       'sh', '-c', 
-      'echo "$CODE_PAYLOAD" | base64 -d > /workspace/solution.cpp && g++ -O3 /workspace/solution.cpp -o /workspace/out && /workspace/out'
+      'echo "$CODE_PAYLOAD" | base64 -d > /workspace/solution.cpp && g++ -O3 /workspace/solution.cpp -o /workspace/out && chmod +x /workspace/out && /workspace/out'
     ],
     sourceFileName: 'solution.cpp'
   }
