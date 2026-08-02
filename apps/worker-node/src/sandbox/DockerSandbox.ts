@@ -42,7 +42,7 @@ export class DockerSandbox {
     try {
       const strategy = LanguageRegistry[language];
       const tmpfsOptions = language === 'CPP' 
-        ? 'rw,nosuid,size=64m,mode=777' 
+        ? 'exec,rw,nosuid,size=64m,mode=777'
         : 'rw,noexec,nosuid,size=64m,mode=777';
       
       // 1. Safely encode the payload to bypass string escaping issues
