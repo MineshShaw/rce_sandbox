@@ -1,93 +1,155 @@
-# rce_sandbox
+# 🚀 Scalable Remote Code Execution (RCE) Sandbox
+A high-performance, distributed code execution engine and sandbox (similar to Replit or LeetCode). This platform allows users to submit untrusted code in multiple languages (Python, JavaScript, C++), isolates the execution in secure Docker containers, and handles massive traffic spikes using an event-driven message queue architecture.
 
+---
 
+## 🧠 System Architecture
+This project is structured as a Monorepo containing independent microservices.
 
-## Getting started
+Unlike standard web applications, running untrusted code is resource-intensive and dangerous. Therefore, the system is strictly decoupled:
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+1. The API Gateway instantly accepts requests and offloads them to a queue.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+2. The Message Broker holds the jobs safely, preventing system crashes during traffic spikes.
 
-## Add your files
+3. The Worker Nodes pull jobs at their own pace, execute them in secure, locked-down Docker sandboxes, and update the database.
 
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+### Tech Stack: What & Why
+* Gateway & Frontend: Node.js / Express (API) & Next.js + Monaco Editor (Client).
 
+* Execution Engine: Docker (Hardened containers using tini to prevent zombie processes).
+
+* Message Broker: Redis + BullMQ (Handles job queueing, retries, and rate-limiting).
+
+* Database: PostgreSQL + Prisma ORM (Stores system state, problem descriptions, and submission metadata).
+
+* Object Storage: MinIO / S3 (Stores raw code files and test cases to prevent bloating the SQL database).
+
+---
+
+## 📂 Repository Structure
+```bash
+rce_sandbox/
+├── apps/
+│   ├── api-server/          # Express REST API (The Front Door)
+│   ├── worker-node/         # Background job processor & Docker orchestrator
+│   └── client/              # Next.js frontend with Monaco Code Editor
+├── packages/                # Shared internal libraries (DRY principle)
+│   ├── database/            # Prisma schema and DB connection singleton
+│   ├── queue/               # BullMQ Redis configuration
+│   ├── storage/             # MinIO S3 client logic
+│   └── shared-types/        # TypeScript interfaces shared across apps
+└── infrastructure/          # Bare-metal setup
+    └─── docker/             # Docker Compose for DB, Redis, and MinIO
+        └── runner-images/   # Isolated Dockerfiles for Python, JS, C++
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/mineshshaw.github/rce_sandbox.git
-git branch -M main
-git push -uf origin main
+
+---
+
+## ⚙️ How a Code Submission Works (The Data Lifecycle)
+1. User Submits Code: The Next.js client sends a POST request with the source code to the api-server.
+
+2. Storage: The api-server uploads the raw code to the MinIO submissions bucket.
+
+3. Ledger: The api-server creates a PENDING record in PostgreSQL.
+
+4. Queueing: The api-server pushes the Job ID to the Redis submissionQueue and returns 202 Accepted to the client.
+
+5. Consumption: A worker-node picks up the job from Redis and marks it RUNNING in the DB.
+
+6. Execution: The worker downloads the code from MinIO, dynamically spins up a secure Docker container, injects the code, runs it, and captures stdout/stderr.
+
+7. Resolution: The worker tears down the container and updates the DB with COMPLETED or FAILED.
+
+---
+
+## 🛠️ Getting Started
+Follow these steps to boot the entire infrastructure locally.
+
+### 1. Prerequisites
+Ensure you have the following installed on your machine:
+
+* Node.js (v18+)
+
+* Docker Desktop (Must be actively running)
+
+* Git
+
+### 2. Install Dependencies
+Run this at the root of the project to install all dependencies and link the local @rce/* packages:
+
+```bash
+npm install
 ```
 
-## Integrate with your tools
+### 3. Boot the Infrastructure (Data Layer)
+Start PostgreSQL, Redis, and MinIO using Docker Compose:
 
-* [Set up project integrations](https://gitlab.com/mineshshaw.github/rce_sandbox/-/settings/integrations)
+```bash
+cd infrastructure/docker
+docker-compose up -d
+```
+(Verify they are running by typing docker ps).
 
-## Collaborate with your team
+### 4. Build the Secure Runner Images
+The Worker Node needs specialized Docker images to run user code safely. You must build these locally on your machine once.
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+```bash
+cd infrastructure/docker/runner-images
 
-## Test and Deploy
+# Build Python Engine
+docker build -t rce-python-runner -f python.Dockerfile .
 
-Use the built-in continuous integration in GitLab.
+# Build JS Engine (if file exists)
+docker build -t rce-js-runner -f js.Dockerfile .
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
+# Build C++ Engine (if file exists)
+docker build -t rce-cpp-runner -f cpp.Dockerfile .
+```
 
-***
+### 5. Database Migrations
+Push the database schema to your running PostgreSQL container and generate the Prisma Client:
 
-# Editing this README
+```bash
+cd packages/database
+npx prisma db push
+npx prisma generate
+```
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+### 🚀 Running the Microservices
+You will need three separate terminal windows to run the application components simultaneously.
 
-## Suggestions for a good README
+* Terminal 1: Start the API Server
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+```bash
+cd apps/api-server
+npm run dev
+# Listens on http://localhost:8000
+```
 
-## Name
-Choose a self-explaining name for your project.
+* Terminal 2: Start the Worker Node
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+```bash
+cd apps/worker-node
+npm run start
+# Listens to Redis Queue. Watch this terminal for execution logs!
+```
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+* Terminal 3: Start the Next.js Client
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+```bash
+cd apps/client
+npm run dev
+# Visit http://localhost:3000 to see the Code Editor UI
+```
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+---
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+## 🗺️ Roadmap (Upcoming Features)
+[ ] Real-Time WebSockets: Replace HTTP polling with real-time socket streams so output appears instantly.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+[ ] The Evaluator: Inject hidden test cases via stdin and compare stdout against expected results (Accepted, Wrong Answer, TLE).
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+[ ] Observability: Mount Grafana/Prometheus dashboards to monitor queue latency and worker CPU usage.
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+[ ] SOLID Infrastructure Interfaces: Abstract Queue and Storage logic so Redis/MinIO can be hot-swapped for Kafka/AWS S3 without rewriting core logic.
