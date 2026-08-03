@@ -146,8 +146,6 @@ npm run dev
 ---
 
 ## 🗺️ Roadmap (Upcoming Features)
-[ ] Real-Time WebSockets: Replace HTTP polling with real-time socket streams so output appears instantly.
-
 [ ] The Evaluator: Inject hidden test cases via stdin and compare stdout against expected results (Accepted, Wrong Answer, TLE).
 
 [ ] Observability: Mount Grafana/Prometheus dashboards to monitor queue latency and worker CPU usage.
