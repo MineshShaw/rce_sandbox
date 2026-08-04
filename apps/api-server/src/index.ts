@@ -4,10 +4,9 @@ import http from 'http'
 import { z } from 'zod';
 import { randomUUID } from 'crypto';
 import { prisma } from '@rce/database';
+import { queuePublisher, queueEventsListener } from '@rce/queue';
 import { storageService, BUCKET_SUBMISSIONS } from '@rce/storage';
-import { submissionQueue, SUBMISSION_QUEUE_NAME } from '@rce/queue';
 import { Server } from 'socket.io'
-import { QueueEvents } from 'bullmq';
 
 const app = express();
 app.use(cors());
@@ -25,27 +24,23 @@ io.on('connection', (socket) => {
   })
 })
 
-const queueEvents = new QueueEvents(SUBMISSION_QUEUE_NAME, {
-  connection: { host: '127.0.0.1', port: 6379 },
-});
-
 // 1. Catch Redis connection errors
-queueEvents.on('error', (err) => {
+queueEventsListener.onError((err) => {
   console.error('🚨 [QueueEvents] Redis Connection Error:', err);
 });
 
 // 2. Track when the job is first added
-queueEvents.on('waiting', ({ jobId }) => {
+queueEventsListener.onWaiting((jobId) => {
   console.log(`📥 [QueueEvents] Job ${jobId} is waiting in the queue`);
 });
 
 // 3. Track when the worker picks it up
-queueEvents.on('active', ({ jobId }) => {
+queueEventsListener.onActive((jobId) => {
   console.log(`⚙️ [QueueEvents] Worker started processing Job ${jobId}`);
 });
 
 // 4. Track completion
-queueEvents.on('completed', async ({ jobId }) => {
+queueEventsListener.onCompleted(async (jobId) => {
   console.log(`✅ [QueueEvents] Worker finished Job ${jobId}`);
   
   const submission = await prisma.submission.findUnique({ where: { id: jobId } });
@@ -58,7 +53,7 @@ queueEvents.on('completed', async ({ jobId }) => {
 });
 
 // 5. Track failure
-queueEvents.on('failed', async ({ jobId, failedReason }) => {
+queueEventsListener.onFailed(async (jobId, failedReason) => {
   console.log(`❌ [QueueEvents] Worker failed Job ${jobId}. Reason: ${failedReason}`);
   
   const submission = await prisma.submission.findUnique({ where: { id: jobId } });
@@ -119,8 +114,8 @@ app.post('/api/submissions', async (req: Request, res: Response): Promise<any> =
       }
     });
 
-    // 4. Dispatch to Redis Queue
-    await submissionQueue.add('execute-code', {
+    // 4. Dispatch to Redis Queue using our clean Publisher
+    await queuePublisher.publishSubmission(submissionId, {
       submissionId,
       problemId: activeProblemId,
       language,
@@ -128,7 +123,7 @@ app.post('/api/submissions', async (req: Request, res: Response): Promise<any> =
       testCasesS3Key: 'mock/cases.json',
       timeLimitMs: 3000,
       memoryLimitMb: 256
-    },{ jobId: submissionId });
+    });
 
     // 5. Return immediately to the client
     return res.status(202).json({
