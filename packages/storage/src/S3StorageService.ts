@@ -1,9 +1,7 @@
 import { S3Client, PutObjectCommand, GetObjectCommand, CreateBucketCommand, HeadBucketCommand } from '@aws-sdk/client-s3';
 import { Readable } from 'stream';
 import { IStorageService } from './IStorageService';
-
-export const BUCKET_SUBMISSIONS = 'rce-submissions';
-export const BUCKET_PROBLEMS = 'rce-problems';
+import { BUCKET_PROBLEMS, BUCKET_SUBMISSIONS } from './index';
 
 export class S3StorageService implements IStorageService {
   private s3: S3Client;
