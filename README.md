@@ -149,5 +149,3 @@ npm run dev
 [ ] The Evaluator: Inject hidden test cases via stdin and compare stdout against expected results (Accepted, Wrong Answer, TLE).
 
 [ ] Observability: Mount Grafana/Prometheus dashboards to monitor queue latency and worker CPU usage.
-
-[ ] SOLID Infrastructure Interfaces: Abstract Queue and Storage logic so Redis/MinIO can be hot-swapped for Kafka/AWS S3 without rewriting core logic.
