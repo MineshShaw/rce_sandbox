@@ -4,15 +4,15 @@
 
 This repository is a TypeScript monorepo for an asynchronous remote code execution sandbox. A Next.js browser client submits Python, JavaScript, or C++ source code to an Express API. The API stores the source in S3-compatible object storage, creates a submission record in PostgreSQL, and queues work in Redis through BullMQ. A worker retrieves the source and runs it in a constrained Docker container, then persists the execution result for the client.
 
-The repository currently provides a local-development implementation; do not assume that every capability described as a goal or in older overview text is implemented. See [docs/baseline-architecture.md](../docs/baseline-architecture.md) for the as-is behavior and limitations.
+The repository currently provides a local-development implementation; do not assume that every capability described as a goal or in older overview text is implemented. See [docs/baseline-architecture.md](../docs/baseline-architecture.md) for the as-is behavior and limitations, and [docs/docker-setup.md](../docs/docker-setup.md) for Phase 1 migration and image build details.
 
 ## Current Tech Stack & Structure
 
 - **Languages and runtime:** TypeScript and Node.js, with npm workspaces.
-- **Web client (`apps/client`):** Next.js App Router, React, Monaco Editor, Axios, Socket.IO client, and Tailwind CSS.
-- **HTTP API (`apps/api-server`):** Express, Zod request validation, Socket.IO events, and shared database, queue, and storage packages.
-- **Execution worker (`apps/worker-node`):** BullMQ consumer, Dockerode orchestration, and a Docker-based sandbox for Python, JavaScript, and C++.
-- **Shared packages (`packages/`):**
+- **Web client (`application/apps/client`):** Next.js App Router, React, Monaco Editor, Axios, Socket.IO client, and Tailwind CSS.
+- **HTTP API (`application/apps/api-server`):** Express, Zod request validation, Socket.IO events, and shared database, queue, and storage packages.
+- **Execution worker (`application/apps/worker-node`):** BullMQ consumer, Dockerode orchestration, and a Docker-based sandbox for Python, JavaScript, and C++.
+- **Shared packages (`application/packages/`):**
   - `database`: Prisma schema/client with PostgreSQL and the `pg` Prisma adapter.
   - `queue`: BullMQ and ioredis publisher, worker, and queue-event listener.
   - `storage`: AWS SDK S3 client configured for S3-compatible storage such as MinIO.

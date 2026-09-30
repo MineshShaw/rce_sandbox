@@ -14,7 +14,6 @@
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
-    "tsx": "^4.23.1",
     "typescript": "^7.0.2"
   },
   "dependencies": {
@@ -22,6 +21,10 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "socket.io": "^4.8.3",
-    "zod": "^4.4.3"
+    "zod": "^4.4.3",
+    "@rce/database": "file:../../packages/database",
+    "@rce/queue": "file:../../packages/queue",
+    "@rce/storage": "file:../../packages/storage",
+    "tsx": "^4.23.1"
   }
 }

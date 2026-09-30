@@ -125,9 +125,9 @@ export class DockerSandbox {
 
       return {
         stdout: stdoutData.trim(),
-        stderr: stderrData.trim(),
+        stderr: isTimeout ? 'Time Limit Exceeded (TLE)' : stderrData.trim(),
         exitCode: waitResult.StatusCode,
-        isTimeout: false,
+        isTimeout,
         isOOM,
       };
 

@@ -30,18 +30,12 @@ Unlike standard web applications, running untrusted code is resource-intensive a
 ## 📂 Repository Structure
 ```bash
 rce_sandbox/
-├── apps/
-│   ├── api-server/          # Express REST API (The Front Door)
-│   ├── worker-node/         # Background job processor & Docker orchestrator
-│   └── client/              # Next.js frontend with Monaco Code Editor
-├── packages/                # Shared internal libraries (DRY principle)
-│   ├── database/            # Prisma schema and DB connection singleton
-│   ├── queue/               # BullMQ Redis configuration
-│   ├── storage/             # MinIO S3 client logic
-│   └── shared-types/        # TypeScript interfaces shared across apps
-└── infrastructure/          # Bare-metal setup
-    └─── docker/             # Docker Compose for DB, Redis, and MinIO
-        └── runner-images/   # Isolated Dockerfiles for Python, JS, C++
+├── application/
+│   ├── apps/                # Next.js client, Express API, and execution worker
+│   └── packages/            # Database, queue, storage, and shared types
+├── docker/                  # Multi-stage application Dockerfile
+├── infrastructure/docker/  # Local PostgreSQL, Redis, MinIO, and runner images
+└── docs/                    # Baseline architecture and implementation plan
 ```
 
 ---
@@ -69,7 +63,7 @@ Follow these steps to boot the entire infrastructure locally.
 ### 1. Prerequisites
 Ensure you have the following installed on your machine:
 
-* Node.js (v18+)
+* Node.js (v20.9+)
 
 * Docker Desktop (Must be actively running)
 
@@ -111,7 +105,7 @@ docker build -t rce-cpp-runner -f cpp.Dockerfile .
 Push the database schema to your running PostgreSQL container and generate the Prisma Client:
 
 ```bash
-cd packages/database
+cd application/packages/database
 npx prisma db push
 npx prisma generate
 ```
@@ -122,7 +116,7 @@ You will need three separate terminal windows to run the application components 
 * Terminal 1: Start the API Server
 
 ```bash
-cd apps/api-server
+cd application/apps/api-server
 npm run dev
 # Listens on http://localhost:8000
 ```
@@ -130,7 +124,7 @@ npm run dev
 * Terminal 2: Start the Worker Node
 
 ```bash
-cd apps/worker-node
+cd application/apps/worker-node
 npm run start
 # Listens to Redis Queue. Watch this terminal for execution logs!
 ```
@@ -138,7 +132,7 @@ npm run start
 * Terminal 3: Start the Next.js Client
 
 ```bash
-cd apps/client
+cd application/apps/client
 npm run dev
 # Visit http://localhost:3000 to see the Code Editor UI
 ```
@@ -149,3 +143,7 @@ npm run dev
 [ ] The Evaluator: Inject hidden test cases via stdin and compare stdout against expected results (Accepted, Wrong Answer, TLE).
 
 [ ] Observability: Mount Grafana/Prometheus dashboards to monitor queue latency and worker CPU usage.
+
+## Phase 1 Docker Images
+
+The application workspaces are under `application/`. Build the API, worker, and client images from the repository root using the commands and runtime configuration in [docs/docker-setup.md](docs/docker-setup.md). The worker image does not include Docker Engine or language runner images; it requires a separately secured execution endpoint.

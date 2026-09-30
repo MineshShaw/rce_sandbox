@@ -2,8 +2,9 @@
   "devDependencies": {
     "@types/node": "^26.1.1"
   },
-  "workspaces":[
-    "apps/*",
-    "packages/*"
-  ]
+  "workspaces": [
+    "application/apps/*",
+    "application/packages/*"
+  ],
+  "private": true
 }

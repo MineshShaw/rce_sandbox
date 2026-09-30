@@ -48,10 +48,11 @@ except OSError as e:
   
   it('should enforce strict execution timeouts (TLE)', async () => {
     const infiniteLoop = `while True: pass`;
-    const result = await sandbox.execute('PYTHON', infiniteLoop);
+    const timeoutSandbox = new DockerSandbox({ timeoutMs: 1000 });
+    const result = await timeoutSandbox.execute('PYTHON', infiniteLoop);
     
     expect(result.exitCode).toBe(137); // SIGKILL
     expect(result.isTimeout).toBe(true);
     expect(result.stderr).toBe('Time Limit Exceeded (TLE)');
-  }, 5000); 
+  }, 5000);
 });
